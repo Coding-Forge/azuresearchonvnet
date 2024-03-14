@@ -1,6 +1,43 @@
+metadata description = 'Creates an Azure App Service in an existing Azure App Service plan.'
 param name string
 param location string = resourceGroup().location
 param tags object = {}
+
+param additionalScopes array = []
+param additionalAllowedAudiences array = []
+param allowedApplications array = []
+@secure()
+param appSettings object = {}
+param clientAffinityEnabled bool = false
+param enableOryxBuild bool = contains(kind, 'linux')
+param functionAppScaleLimit int = -1
+param linuxFxVersion string = runtimeNameAndVersion
+param minimumElasticInstanceCount int = -1
+param numberOfWorkers int = -1
+param scmDoBuildDuringDeployment bool = false
+param use32BitWorkerProcess bool = false
+param ftpsState string = 'FtpsOnly'
+param healthCheckPath string = ''
+param clientAppId string = ''
+param serverAppId string = ''
+@secure()
+param clientSecretSettingName string = ''
+param authenticationIssuerUri string = ''
+
+var msftAllowedOrigins = [ 'https://portal.azure.com', 'https://ms.portal.azure.com' ]
+var loginEndpoint = environment().authentication.loginEndpoint
+var loginEndpointFixed = lastIndexOf(loginEndpoint, '/') == length(loginEndpoint) - 1 ? substring(loginEndpoint, 0, length(loginEndpoint) - 1) : loginEndpoint
+var allMsftAllowedOrigins = !(empty(clientAppId)) ? union(msftAllowedOrigins, [loginEndpointFixed]) : msftAllowedOrigins
+
+// .default must be the 1st scope for On-Behalf-Of-Flow combined consent to work properly
+// Please see https://learn.microsoft.com/entra/identity-platform/v2-oauth2-on-behalf-of-flow#default-and-combined-consent
+var requiredScopes = ['api://${serverAppId}/.default', 'openid', 'profile', 'email', 'offline_access']
+var requiredAudiences = ['api://${serverAppId}']
+
+
+
+
+
 
 // Reference Properties
 param applicationInsightsName string = ''
@@ -23,17 +60,6 @@ param kind string = 'app,linux'
 param allowedOrigins array = []
 param alwaysOn bool = true
 param appCommandLine string = ''
-param appSettings object = {}
-param clientAffinityEnabled bool = false
-param enableOryxBuild bool = contains(kind, 'linux')
-param functionAppScaleLimit int = -1
-param linuxFxVersion string = runtimeNameAndVersion
-param minimumElasticInstanceCount int = -1
-param numberOfWorkers int = -1
-param scmDoBuildDuringDeployment bool = false
-param use32BitWorkerProcess bool = false
-param ftpsState string = 'FtpsOnly'
-param healthCheckPath string = ''
 
 //NEW
 param virtualNetworkSubnetId string = ''
@@ -81,15 +107,27 @@ resource appService 'Microsoft.Web/sites@2022-03-01' = {
       functionAppScaleLimit: functionAppScaleLimit != -1 ? functionAppScaleLimit : null
       healthCheckPath: healthCheckPath
       cors: {
-        allowedOrigins: union([ 'https://portal.azure.com', 'https://ms.portal.azure.com' ], allowedOrigins)
+        allowedOrigins: union(allMsftAllowedOrigins, allowedOrigins)
       }
     }
     clientAffinityEnabled: clientAffinityEnabled
     httpsOnly: true
   }
 
-  // TODO: Support user assigned managed identity.
   identity: { type: managedIdentity ? 'SystemAssigned' : 'None' }
+
+  resource configAppSettings 'config' = {
+    name: 'appsettings'
+    properties: union(appSettings,
+      {
+        SCM_DO_BUILD_DURING_DEPLOYMENT: string(scmDoBuildDuringDeployment)
+        ENABLE_ORYX_BUILD: string(enableOryxBuild)
+      },
+      runtimeName == 'python' ? { PYTHON_ENABLE_GUNICORN_MULTIWORKERS: 'true'} : {},
+      !empty(applicationInsightsName) ? { APPLICATIONINSIGHTS_CONNECTION_STRING: applicationInsights.properties.ConnectionString } : {},
+      !empty(keyVaultName) ? { AZURE_KEY_VAULT_ENDPOINT: keyVault.properties.vaultUri } : {})
+  }
+
 
   // NOTE: App Service logs aren't used for Function Apps.This isn't working with EP plans
   // when setting WEBSITE_CONTENTAZUREFILECONNECTIONSTRING and WEBSITE_CONTENTSHARE
@@ -101,11 +139,13 @@ resource appService 'Microsoft.Web/sites@2022-03-01' = {
       failedRequestsTracing: { enabled: true }
       httpLogs: { fileSystem: { enabled: true, retentionInDays: 1, retentionInMb: 35 } }
     }
+    dependsOn:[
+      configAppSettings
+    ]
   }
 
   resource basicPublishingCredentialsPoliciesFtp 'basicPublishingCredentialsPolicies' = {
     name: 'ftp'
-    location: location
     properties: {
       allow: false
     }
@@ -113,9 +153,43 @@ resource appService 'Microsoft.Web/sites@2022-03-01' = {
 
   resource basicPublishingCredentialsPoliciesScm 'basicPublishingCredentialsPolicies' = {
     name: 'scm'
-    location: location
     properties: {
       allow: false
+    }
+  }
+
+  resource configAuth 'config' = if (!(empty(clientAppId))) {
+    name: 'authsettingsV2'
+    properties: {
+      globalValidation: {
+        requireAuthentication: true
+        unauthenticatedClientAction: 'RedirectToLoginPage'
+        redirectToProvider: 'azureactivedirectory'
+      }
+      identityProviders: {
+        azureActiveDirectory: {
+          enabled: true
+          registration: {
+            clientId: clientAppId
+            clientSecretSettingName: clientSecretSettingName
+            openIdIssuer: authenticationIssuerUri
+          }
+          login: {
+            loginParameters: ['scope=${join(union(requiredScopes, additionalScopes), ' ')}']
+          }
+          validation: {
+            allowedAudiences: union(requiredAudiences, additionalAllowedAudiences)
+            defaultAuthorizationPolicy: {
+              allowedApplications: allowedApplications
+            }
+          }
+        }
+      }
+      login: {
+        tokenStore: {
+          enabled: true
+        }
+      }
     }
   }
 }
