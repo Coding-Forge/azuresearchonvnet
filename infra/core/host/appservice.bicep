@@ -34,11 +34,6 @@ var allMsftAllowedOrigins = !(empty(clientAppId)) ? union(msftAllowedOrigins, [l
 var requiredScopes = ['api://${serverAppId}/.default', 'openid', 'profile', 'email', 'offline_access']
 var requiredAudiences = ['api://${serverAppId}']
 
-
-
-
-
-
 // Reference Properties
 param applicationInsightsName string = ''
 param appServicePlanId string

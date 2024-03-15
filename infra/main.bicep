@@ -40,7 +40,6 @@ var virtualNetworkName = '${abbrs.networkVirtualNetworks}${resourceToken}'
 var virtualNetworkIntegrationSubnetName = '${abbrs.networkVirtualNetworksSubnets}${resourceToken}-int'
 var virtualNetworkPrivateEndpointSubnetName = '${abbrs.networkVirtualNetworksSubnets}${resourceToken}-pe'
 
-var eventHubConsumerGroupName = 'widgetfunctionconsumergroup'
 var functionAppName = '${abbrs.webSitesFunctions}${resourceToken}'
 var storageSecretName = 'storage-connection-string'
 
@@ -67,7 +66,7 @@ param useSearchServiceKey bool = searchServiceSkuName == 'free'
 
 param storageAccountName string = ''
 param storageResourceGroupName string = ''
-param storageResourceGroupLocation string = location
+//param storageResourceGroupLocation string = location
 param storageContainerName string = 'content'
 param storageSkuName string // Set in main.parameters.json
 
@@ -116,22 +115,22 @@ param documentIntelligenceResourceGroupLocation string
 
 param documentIntelligenceSkuName string = 'S0'
 
-param computerVisionServiceName string = ''
-param computerVisionResourceGroupName string = ''
-param computerVisionResourceGroupLocation string = 'eastus' // Vision vectorize API is yet to be deployed globally
-param computerVisionSkuName string = 'S1'
+//param computerVisionServiceName string = ''
+//param computerVisionResourceGroupName string = ''
+//param computerVisionResourceGroupLocation string = 'eastus' // Vision vectorize API is yet to be deployed globally
+//param computerVisionSkuName string = 'S1'
 
 param chatGptDeploymentName string // Set in main.parameters.json
-param chatGptDeploymentCapacity int = 30
-param chatGpt4vDeploymentCapacity int = 10
+//param chatGptDeploymentCapacity int = 30
+//param chatGpt4vDeploymentCapacity int = 10
 param chatGptModelName string = startsWith(openAiHost, 'azure') ? 'gpt-35-turbo' : 'gpt-3.5-turbo'
-param chatGptModelVersion string = '0613'
+//param chatGptModelVersion string = '0613'
 param embeddingDeploymentName string // Set in main.parameters.json
-param embeddingDeploymentCapacity int = 30
+//param embeddingDeploymentCapacity int = 30
 param embeddingModelName string = 'text-embedding-ada-002'
 param gpt4vModelName string = 'gpt-4'
 param gpt4vDeploymentName string = 'gpt-4v'
-param gpt4vModelVersion string = 'vision-preview'
+//param gpt4vModelVersion string = 'vision-preview'
 
 param tenantId string = tenant().tenantId
 param authTenantId string = ''
@@ -160,7 +159,7 @@ param useIntegratedVectorization bool = false
 var abbrs = loadJsonContent('abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
 var tags = { 'azd-env-name': environmentName }
-var computerVisionName = !empty(computerVisionServiceName) ? computerVisionServiceName : '${abbrs.cognitiveServicesComputerVision}${resourceToken}'
+//var computerVisionName = !empty(computerVisionServiceName) ? computerVisionServiceName : '${abbrs.cognitiveServicesComputerVision}${resourceToken}'
 
 var useKeyVault = useSearchServiceKey
 var tenantIdForAuth = !empty(authTenantId) ? authTenantId : tenantId
@@ -179,6 +178,7 @@ resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' = {
   tags: tags
 }
 
+/*
 @description('This is the built-in role definition for the Key Vault Secret User role. See https://learn.microsoft.com/azure/role-based-access-control/built-in-roles#key-vault-secrets-user for more information.')
 resource keyVaultSecretUserRoleDefintion 'Microsoft.Authorization/roleDefinitions@2022-04-01' existing = {
   scope: subscription()
@@ -191,17 +191,12 @@ resource eventHubDataReceiverUserRoleDefintion 'Microsoft.Authorization/roleDefi
   name: 'a638d3c7-ab3a-418d-83e6-5f17a39d4fde'
 }
 
-@description('This is the built-in role definition for the Azure Event Hubs Data Sender role. See https://learn.microsoft.com/azure/role-based-access-control/built-in-roles#azure-event-hubs-data-sender for more information.')
-resource eventHubDataSenderUserRoleDefintion 'Microsoft.Authorization/roleDefinitions@2022-04-01' existing = {
-  scope: subscription()
-  name: '2b629674-e913-4c01-ae53-ef4638d8f975'
-}
-
 @description('This is the built-in role definition for the Azure Storage Blob Data Owner role. See https://learn.microsoft.com/azure/role-based-access-control/built-in-roles#storage-blob-data-owner for more information.')
 resource storageBlobDataOwnerRoleDefinition 'Microsoft.Authorization/roleDefinitions@2022-04-01' existing = {
   scope: subscription()
   name: 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b'
 }
+*/
 
 resource openAiResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' existing = if (!empty(openAiResourceGroupName)) {
   name: !empty(openAiResourceGroupName) ? openAiResourceGroupName : rg.name
@@ -211,9 +206,11 @@ resource documentIntelligenceResourceGroup 'Microsoft.Resources/resourceGroups@2
   name: !empty(documentIntelligenceResourceGroupName) ? documentIntelligenceResourceGroupName : rg.name
 }
 
+/*
 resource computerVisionResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' existing = if (!empty(computerVisionResourceGroupName)) {
   name: !empty(computerVisionResourceGroupName) ? computerVisionResourceGroupName : rg.name
 }
+*/
 
 resource searchServiceResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' existing = if (!empty(searchServiceResourceGroupName)) {
   name: !empty(searchServiceResourceGroupName) ? searchServiceResourceGroupName : rg.name
@@ -229,6 +226,8 @@ resource keyVaultResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' e
 
 // TODO: Scope to the specific resource (Event Hub, Storage, Key Vault) instead of the resource group.
 //       See https://github.com/Azure/bicep/discussions/5926
+
+/*
 module storageRoleAssignment 'core/security/role.bicep' = {
   name: 'storageRoleAssignment'
   scope: rg
@@ -238,49 +237,8 @@ module storageRoleAssignment 'core/security/role.bicep' = {
     principalType: 'ServicePrincipal'
   }
 }
-
-module eventHubReceiverRoleAssignment 'core/security/role.bicep' = {
-  name: 'eventHubReceiverRoleAssignment'
-  scope: rg
-  params: {
-    principalId: functionApp.outputs.identityPrincipalId
-    roleDefinitionId: eventHubDataReceiverUserRoleDefintion.name
-    principalType: 'ServicePrincipal'
-  }
-}
-
-module eventHubSenderRoleAssignment 'core/security/role.bicep' = {
-  name: 'eventHubSenderRoleAssignment'
-  scope: rg
-  params: {
-    principalId: functionApp.outputs.identityPrincipalId
-    roleDefinitionId: eventHubDataSenderUserRoleDefintion.name
-    principalType: 'ServicePrincipal'
-  }
-}
-
-// Set the RBAC roles for the provided Azure principalId (e.g., the user executing the deployment).
-module eventHubReceiverRoleUserAssignment 'core/security/role.bicep' = if (!empty(principalId)) {
-  name: 'eventHubReceiverRoleUserAssignment'
-  scope: rg
-  params: {
-    principalId: principalId
-    roleDefinitionId: eventHubDataReceiverUserRoleDefintion.name
-    principalType: principalType
-  }
-}
-
-// Set the RBAC roles for the provided Azure principalId (e.g., the user executing the deployment).
-module eventHubSenderRoleUserAssignment 'core/security/role.bicep' = if (!empty(principalId)) {
-  name: 'eventHubSenderRoleUserAssignment'
-  scope: rg
-  params: {
-    principalId: principalId
-    roleDefinitionId: eventHubDataSenderUserRoleDefintion.name
-    principalType: principalType
-  }
-}
-
+*/
+/*
 module keyVaultRoleAssignment 'core/security/role.bicep' = {
   name: 'keyVaultRoleAssignment'
   scope: rg
@@ -290,6 +248,7 @@ module keyVaultRoleAssignment 'core/security/role.bicep' = {
     principalType: 'ServicePrincipal'
   }
 }
+*/
 
 module logAnalytics './core/monitor/loganalytics.bicep' = {
   name: 'logAnalytics'
@@ -352,42 +311,6 @@ module storage './core/storage/storage-account.bicep' = {
   }
 }
 
-module eventHubNamespace './core/messaging/event-hub-namespace.bicep' = {
-  name: 'eventHubNamespace'
-  scope: rg
-  params: {
-    name: '${abbrs.eventHubNamespaces}${resourceToken}'
-    location: location
-    tags: tags
-
-    sku: 'Standard'
-
-    useVirtualNetworkPrivateEndpoint: useVirtualNetworkPrivateEndpoint
-  }
-}
-
-module eventHub './core/messaging/event-hub.bicep' = {
-  name: 'eventHub'
-  scope: rg
-  params: {
-    name: '${abbrs.eventHubNamespacesEventHubs}widget'
-    eventHubNamespaceName: eventHubNamespace.outputs.eventHubNamespaceName
-    consumerGroupName: eventHubConsumerGroupName
-  }
-}
-
-module keyVault 'core/security/keyvault.bicep' = {
-  name: 'keyVault'
-  scope: rg
-  params: {
-    name: '${abbrs.keyVaultVaults}${resourceToken}'
-    location: location
-    tags: tags
-    enabledForRbacAuthorization: true
-    useVirtualNetworkPrivateEndpoint: useVirtualNetworkPrivateEndpoint
-  }
-}
-
 // Monitor application with Azure Monitor
 module monitoring 'core/monitor/monitoring.bicep' = if (useApplicationInsights) {
   name: 'monitoring'
@@ -397,6 +320,7 @@ module monitoring 'core/monitor/monitoring.bicep' = if (useApplicationInsights) 
     tags: tags
     applicationInsightsName: !empty(applicationInsightsName) ? applicationInsightsName : '${abbrs.insightsComponents}${resourceToken}'
     logAnalyticsName: !empty(logAnalyticsName) ? logAnalyticsName : '${abbrs.operationalInsightsWorkspaces}${resourceToken}'
+    applicationInsightsDashboardName: applicationInsightsDashboardName
   }
 }
 
@@ -453,7 +377,6 @@ module backend 'core/host/appservice.bicep' = {
       AZURE_SEARCH_INDEX: searchIndexName
       AZURE_SEARCH_SERVICE: searchService.outputs.name
       AZURE_SEARCH_SEMANTIC_RANKER: actualSearchServiceSemanticRankerLevel
-      AZURE_VISION_ENDPOINT: useGPT4V ? computerVision.outputs.endpoint : ''
       SEARCH_SECRET_NAME: useSearchServiceKey ? searchServiceSecretName : ''
       AZURE_KEY_VAULT_NAME: useKeyVault ? keyVault.outputs.name : ''
       AZURE_SEARCH_QUERY_LANGUAGE: searchQueryLanguage
@@ -492,6 +415,7 @@ module backend 'core/host/appservice.bicep' = {
   }
 }
 
+/*
 var defaultOpenAiDeployments = [
   {
     name: chatGptDeploymentName
@@ -520,7 +444,7 @@ var defaultOpenAiDeployments = [
 ]
 
 var openAiDeployments = concat(defaultOpenAiDeployments, useGPT4V ? [
-    {
+  {
       name: gpt4vDeploymentName
       model: {
         format: 'OpenAI'
@@ -533,6 +457,7 @@ var openAiDeployments = concat(defaultOpenAiDeployments, useGPT4V ? [
       }
     }
   ] : [])
+*/
 
 module openAi 'core/ai/cognitiveservices.bicep' = if (isAzureOpenAiHost) {
   name: 'openai'
@@ -544,9 +469,56 @@ module openAi 'core/ai/cognitiveservices.bicep' = if (isAzureOpenAiHost) {
     sku: {
       name: openAiSkuName
     }
-    deployments: openAiDeployments
+    vnetName: vnet.outputs.virtualNetworkName
+    //deployments: openAiDeployments
+    publicNetworkAccess: 'Disabled'
+    customSubDomainName: virtualNetworkIntegrationSubnetName
+    privateEndpointsSubnetname: virtualNetworkPrivateEndpointSubnetName
   }
 }
+
+// module openAI  'core/ai/cognitiveservices.bicep' = if (isAzureOpenAiHost) {
+//   name: 'openai'
+//   scope: openAiResourceGroup
+//   params: {
+//     sku: {
+//       name: openAiSkuName
+//     }
+//     kind: 'OpenAI'
+//     name: 'openAi'
+//     location: location
+//     vnetName: vnet.outputs.virtualNetworkName
+//     privateEndpointsSubnetname: virtualNetworkPrivateEndpointSubnetName
+//     // privateEndpoints: [
+//     //   {
+//     //     name: virtualNetworkPrivateEndpointSubnetName
+//     //     privateLinkServiceConnectionState: {
+//     //       status: 'Approved'
+//     //       description: 'Approved'
+//     //     }
+//     //   }
+//     // ]
+//     deployments: [
+//       {
+//         name: 'model-deployment-gpt'
+//         sku: {
+//           name: 'Standard'
+//           capacity: 120
+//         }
+//         properties: {
+//           model: {
+//             format: 'OpenAI'
+//             name: 'text-davinci-002'
+//             version: 1
+//           }
+//           raiPolicyName: 'Microsoft.Default'
+//         }
+//       }
+//     ]
+//   }
+// }
+
+
 
 // Formerly known as Form Recognizer
 module documentIntelligence 'core/ai/cognitiveservices.bicep' = {
@@ -560,20 +532,9 @@ module documentIntelligence 'core/ai/cognitiveservices.bicep' = {
     sku: {
       name: documentIntelligenceSkuName
     }
-  }
-}
-
-module computerVision 'core/ai/cognitiveservices.bicep' = if (useGPT4V) {
-  name: 'computerVision'
-  scope: computerVisionResourceGroup
-  params: {
-    name: computerVisionName
-    kind: 'ComputerVision'
-    location: computerVisionResourceGroupLocation
-    tags: tags
-    sku: {
-      name: computerVisionSkuName
-    }
+    publicNetworkAccess: 'Disabled'
+    vnetName: vnet.outputs.virtualNetworkName
+    privateEndpointsSubnetname: virtualNetworkPrivateEndpointSubnetName
   }
 }
 
@@ -625,6 +586,7 @@ module searchService 'core/search/search-services.bicep' = {
       name: searchServiceSkuName
     }
     semanticSearch: actualSearchServiceSemanticRankerLevel
+    
   }
 }
 
@@ -688,13 +650,12 @@ module networking 'core/networking/private-networking.bicep' = if (useVirtualNet
   scope: rg
   params: {
     location: location
-    eventHubNamespaceName: eventHubNamespace.outputs.eventHubNamespaceName
     keyVaultName: keyVault.outputs.name
-    storageAccoutnName: storage.outputs.name
-    functionName: functionApp.outputs.name
+    storageAccountName: storage.outputs.name
     virtualNetworkIntegrationSubnetName: virtualNetworkIntegrationSubnetName
     virtualNetworkName: virtualNetworkName
     virtualNetworkPrivateEndpointSubnetName: virtualNetworkPrivateEndpointSubnetName
+    openaiName: openAi.outputs.name
   }
 }
 
@@ -710,57 +671,6 @@ module functionPlan 'core/host/functionplan.bicep' = {
   }
 }
 
-module functionApp 'core/host/functions.bicep' = {
-  name: 'functionApp'
-  scope: rg
-  params: {
-    location: location
-    tags: union(tags, { 'azd-service-name': 'event-consumer-func' })
-    name: functionAppName
-    appServicePlanId: functionPlan.outputs.planId
-    keyVaultName: keyVault.outputs.name
-    storageKeyVaultSecretName: storageSecretName
-    managedIdentity: true // creates a system assigned identity
-    functionsWorkerRuntime: 'dotnet'
-    runtimeName: 'dotnetcore'
-    runtimeVersion: '6.0'
-    extensionVersion: '~4'
-    storageAccountName: storage.outputs.name
-    vnetRouteAllEnabled: true
-    kind: 'functionapp,linux'
-    alwaysOn: false
-    enableOryxBuild: false
-    scmDoBuildDuringDeployment: false
-    functionsRuntimeScaleMonitoringEnabled: true
-    applicationInsightsName: appInsights.outputs.name
-    virtualNetworkIntegrationSubnetId: useVirtualNetworkIntegration ? vnet.outputs.virtualNetworkSubnets[0].id : ''
-    appSettings: {
-      EVENTHUB_CONNECTION__fullyQualifiedNamespace: '${eventHubNamespace.outputs.eventHubNamespaceName}.servicebus.windows.net'
-      EVENTHUB_NAME: eventHub.outputs.EventHubName
-      EVENTHUB_CONSUMER_GROUP_NAME: eventHub.outputs.EventHubConsumerGroupName
-
-      // Needed for EP plans
-      WEBSITE_CONTENTSHARE: functionAppName
-      WEBSITE_CONTENTAZUREFILECONNECTIONSTRING: '@Microsoft.KeyVault(VaultName=${keyVault.outputs.name};SecretName=${storageSecretName})'
-
-      // If the storage account is private . . .
-      WEBSITE_CONTENTOVERVNET: 1
-
-      // WEBSITE_SKIP_CONTENTSHARE_VALIDATE should be set to 1 when using vnet private endpoint
-      // for Azure Storage or when WEBSITE_CONTENTAZUREFILECONNECTIONSTRING uses a
-      // key vault reference. See https://github.com/Azure/azure-functions-host/issues/7094
-      WEBSITE_SKIP_CONTENTSHARE_VALIDATION: 1
-
-      // Need the settings below if using (user-assigned) identity-based connection for AzureWebJobsStorage or EventHubConnection
-      // EventHubConnection__clientId: uami.properties.clientId
-      // EventHubConnection__credential: 'managedidentity'
-      // AzureWebJobsStorage__accountName: storage.name
-      // AzureWebJobsStorage__credential: 'managedidentity'
-      // AzureWebJobsStorage__clientId: uami.properties.clientId
-
-    }
-  }
-}
 
 // USER ROLES
 var principalType = empty(runningOnGh) && empty(runningOnAdo) ? 'User' : 'ServicePrincipal'
@@ -777,7 +687,7 @@ module openAiRoleUser 'core/security/role.bicep' = if (isAzureOpenAiHost) {
 
 // For both document intelligence and computer vision
 module cognitiveServicesRoleUser 'core/security/role.bicep' = {
-  scope: resourceGroup
+  scope: rg
   name: 'cognitiveservices-role-user'
   params: {
     principalId: principalId
@@ -925,7 +835,7 @@ output AZURE_OPENAI_CHATGPT_MODEL string = chatGptModelName
 output AZURE_OPENAI_GPT4V_MODEL string = gpt4vModelName
 
 // Specific to Azure OpenAI
-output AZURE_OPENAI_SERVICE string = isAzureOpenAiHost ? openAi.outputs.name : ''
+//output AZURE_OPENAI_SERVICE string = isAzureOpenAiHost ? openAi.outputs.name : ''
 output AZURE_OPENAI_API_VERSION string = isAzureOpenAiHost ? azureOpenAiApiVersion : ''
 output AZURE_OPENAI_RESOURCE_GROUP string = isAzureOpenAiHost ? openAiResourceGroup.name : ''
 output AZURE_OPENAI_CHATGPT_DEPLOYMENT string = isAzureOpenAiHost ? chatGptDeploymentName : ''
@@ -936,7 +846,6 @@ output AZURE_OPENAI_GPT4V_DEPLOYMENT string = isAzureOpenAiHost ? gpt4vDeploymen
 output OPENAI_API_KEY string = (openAiHost == 'openai') ? openAiApiKey : ''
 output OPENAI_ORGANIZATION string = (openAiHost == 'openai') ? openAiApiOrganization : ''
 
-output AZURE_VISION_ENDPOINT string = useGPT4V ? computerVision.outputs.endpoint : ''
 output AZURE_KEY_VAULT_NAME string = useKeyVault ? keyVault.outputs.name : ''
 
 output AZURE_DOCUMENTINTELLIGENCE_SERVICE string = documentIntelligence.outputs.name
@@ -959,7 +868,3 @@ output BACKEND_URI string = backend.outputs.uri
 
 // from previous azd
 output APPLICATIONINSIGHTS_CONNECTION_STRING string = appInsights.outputs.connectionString
-output EVENTHUB_CONSUMER_GROUP_NAME string = eventHub.outputs.EventHubConsumerGroupName
-output EVENTHUB_NAME string = eventHub.outputs.EventHubName
-output EVENTHUB_NAMESPACE string = eventHubNamespace.outputs.eventHubNamespaceName
-output EVENTHUB_CONNECTION__fullyQualifiedNamespace string = '${eventHubNamespace.outputs.eventHubNamespaceName}.servicebus.windows.net'

@@ -7,10 +7,6 @@ infra:
 metadata:
   template: azure-search-openai-demo@0.0.2-beta
 services:
-  event-consumer-func:
-    project: src
-    language: csharp
-    host: function
   backend:
     project: ./app/backend
     language: py

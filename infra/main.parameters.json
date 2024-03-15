@@ -11,8 +11,11 @@
     "principalId": {
       "value": "${AZURE_PRINCIPAL_ID}"
     },
-    "principalType": {
+      "principalType": {
       "value": "${AZURE_PRINCIPAL_TYPE}"
+    },
+      "resourceGroupName": {
+      "value": "${AZURE_RESOURCE_GROUP}"
     },
     "useVirtualNetworkIntegration": {
       "value": "${USE_VIRTUAL_NETWORK_INTEGRATION}"

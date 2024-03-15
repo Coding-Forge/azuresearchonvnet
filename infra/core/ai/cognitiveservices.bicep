@@ -6,6 +6,8 @@ param tags object = {}
 param customSubDomainName string = name
 param deployments array = []
 param kind string = 'OpenAI'
+param vnetName string
+param privateEndpointsSubnetname string
 
 @allowed([ 'Enabled', 'Disabled' ])
 param publicNetworkAccess string = 'Enabled'
@@ -13,12 +15,27 @@ param sku object = {
   name: 'S0'
 }
 
+//var baseName = 'placeholdername'
+
 param allowedIpRules array = []
 param networkAcls object = empty(allowedIpRules) ? {
   defaultAction: 'Allow'
 } : {
   ipRules: allowedIpRules
   defaultAction: 'Deny'
+}
+
+
+//var openaiName = 'oai-${baseName}'
+//var openaiPrivateEndpointName = 'pep-${openaiName}'
+//var openaiDnsGroupName = '${openaiPrivateEndpointName}/default'
+//var openaiDnsZoneName = 'privatelink.openai.azure.com'
+
+resource vnet 'Microsoft.Network/virtualNetworks@2022-11-01' existing = {
+  name: vnetName
+  resource privateEndpointsSubnet 'subnets' existing = {
+    name: privateEndpointsSubnetname
+  }
 }
 
 resource account 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
