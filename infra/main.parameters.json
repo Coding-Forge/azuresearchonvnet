@@ -16,8 +16,11 @@
     },
       "resourceGroupName": {
       "value": "${AZURE_RESOURCE_GROUP}"
+    }, 
+      "useKeyVault": {
+      "value": "${USE_KEYVAULT=false}"
     },
-    "useVirtualNetworkIntegration": {
+      "useVirtualNetworkIntegration": {
       "value": "${USE_VIRTUAL_NETWORK_INTEGRATION}"
     },
     "useVirtualNetworkPrivateEndpoint": {
@@ -111,7 +114,7 @@
       "value": "${OPENAI_ORGANIZATION}"
     },
     "useApplicationInsights": {
-      "value": "${AZURE_USE_APPLICATION_INSIGHTS=true}"
+      "value": "${AZURE_USE_APPLICATION_INSIGHTS=false}"
     },
     "useVectors": {
       "value": "${USE_VECTORS=true}"
@@ -154,8 +157,19 @@
     },
     "runningOnAdo": {
       "value": "${TF_BUILD}"
-    }, "logAnalyticsName": {
-      "value": "${AZURE_LOG_ANALYTICS_NAME}"
-    }
+    }, "logAnalyticsName": {  
+       "value": "${AZURE_LOG_ANALYTICS_NAME}"
+
+    }, "virtualNetworkName"                       : { "value": "${VNET_NAME}" 
+    }, "virtualNetworkIntegrationSubnetName"      : { "value": "${VNET_SUBNET_NAME}"
+    }, "virtualNetworkPrivateEndpointSubnetName"  : { "value": "${VNET_PRIVATE_ENDPOINT_SUBNET_NAME}"
+    }, "virtualNetworkPrivateEndpointName"        : { "value": "${VNET_PRIVATE_ENDPOINT_NAME}"
+    }, "virtualNetworkIntegrationName"            : { "value": "${VNET_INTEGRATION_NAME}"
+    }, "virtualNetworkIntegrationPrivateDnsZoneId": { "value": "${VNET_INTEGRATION_PRIVATE_DNS_ZONE_ID}"
+    }, "virtualNetworkPrivateEndpointPrivateDnsZoneId": { "value": "${VNET_PRIVATE_ENDPOINT_PRIVATE_DNS_ZONE_ID}"
+    }, "virtualNetworkPrivateEndpointPrivateDnsZoneName": { "value": "${VNET_PRIVATE_ENDPOINT_PRIVATE_DNS_ZONE_NAME}"
+    }, "virtualNetworkIntegrationPrivateDnsZoneResourceGroup": { "value": "${VNET_INTEGRATION_PRIVATE_DNS_ZONE_RESOURCE_GROUP}"
+    }, "virtualNetworkPrivateEndpointPrivateDnsZoneResourceGroup": { "value": "${VNET_PRIVATE_ENDPOINT_PRIVATE_DNS_ZONE_RESOURCE_GROUP}"
+    }, "virtualNetworkIntegrationPrivateDnsZoneName": { "value": "${VNET_INTEGRATION_PRIVATE_DNS_ZONE_NAME}"}
   }
 }
