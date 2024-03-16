@@ -154,6 +154,8 @@
     },
     "runningOnAdo": {
       "value": "${TF_BUILD}"
+    }, "logAnalyticsName": {
+      "value": "${AZURE_LOG_ANALYTICS_NAME}"
     }
   }
 }

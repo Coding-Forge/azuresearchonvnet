@@ -519,6 +519,50 @@ module openAi 'core/ai/cognitiveservices.bicep' = if (isAzureOpenAiHost) {
 // }
 
 
+// Currently, we only need Key Vault for storing Search service key,
+// which is only used for free tier
+
+// module openAI  'core/ai/cognitiveservices.bicep' = if (isAzureOpenAiHost) {
+//   name: 'openai'
+//   scope: openAiResourceGroup
+//   params: {
+//     sku: {
+//       name: openAiSkuName
+//     }
+//     kind: 'OpenAI'
+//     name: 'openAi'
+//     location: location
+//     vnetName: vnet.outputs.virtualNetworkName
+//     privateEndpointsSubnetname: virtualNetworkPrivateEndpointSubnetName
+//     // privateEndpoints: [
+//     //   {
+//     //     name: virtualNetworkPrivateEndpointSubnetName
+//     //     privateLinkServiceConnectionState: {
+//     //       status: 'Approved'
+//     //       description: 'Approved'
+//     //     }
+//     //   }
+//     // ]
+//     deployments: [
+//       {
+//         name: 'model-deployment-gpt'
+//         sku: {
+//           name: 'Standard'
+//           capacity: 120
+//         }
+//         properties: {
+//           model: {
+//             format: 'OpenAI'
+//             name: 'text-davinci-002'
+//             version: 1
+//           }
+//           raiPolicyName: 'Microsoft.Default'
+//         }
+//       }
+//     ]
+//   }
+// }
+
 
 // Formerly known as Form Recognizer
 module documentIntelligence 'core/ai/cognitiveservices.bicep' = {
@@ -534,6 +578,7 @@ module documentIntelligence 'core/ai/cognitiveservices.bicep' = {
     }
     publicNetworkAccess: 'Disabled'
     vnetName: vnet.outputs.virtualNetworkName
+    customSubDomainName: virtualNetworkIntegrationSubnetName
     privateEndpointsSubnetname: virtualNetworkPrivateEndpointSubnetName
   }
 }
