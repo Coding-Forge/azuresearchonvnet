@@ -36,9 +36,9 @@ param principalId string = ''
 //   tags: union(tags, { 'azd-service-name': <service name in azure.yaml> })
 
 var useVirtualNetwork = useVirtualNetworkIntegration || useVirtualNetworkPrivateEndpoint
-var virtualNetworkName = '${abbrs.networkVirtualNetworks}${resourceToken}-vn4'
-var virtualNetworkIntegrationSubnetName = '${abbrs.networkVirtualNetworksSubnets}${resourceToken}-int4'
-var virtualNetworkPrivateEndpointSubnetName = '${abbrs.networkVirtualNetworksSubnets}${resourceToken}-pe4'
+var virtualNetworkName = 'bbv${abbrs.networkVirtualNetworks}${resourceToken}-vn5'
+var virtualNetworkIntegrationSubnetName = 'bbv${abbrs.networkVirtualNetworksSubnets}${resourceToken}-int5'
+var virtualNetworkPrivateEndpointSubnetName = 'bbv${abbrs.networkVirtualNetworksSubnets}${resourceToken}-pe5'
 
 //var virtualNetworkName = ''
 //var virtualNetworkIntegrationSubnetName = ''
@@ -47,7 +47,6 @@ var virtualNetworkPrivateEndpointSubnetName = '${abbrs.networkVirtualNetworksSub
 
 
 var functionAppName = '${abbrs.webSitesFunctions}${resourceToken}'
-var storageSecretName = 'storage-connection-string'
 
 param appServicePlanName string = ''
 param backendServiceName string = ''
@@ -76,6 +75,7 @@ param storageResourceGroupName string = ''
 param storageContainerName string = 'content'
 param storageSkuName string // Set in main.parameters.json
 
+@allowed([ 'F1', 'S1', 'S2', 'S3' ])
 param appServiceSkuName string // Set in main.parameters.json
 
 @allowed([ 'azure', 'openai', 'azure_custom' ])
@@ -88,8 +88,6 @@ param openAiServiceName string = ''
 param openAiResourceGroupName string = ''
 param useGPT4V bool = false
 
-param keyVaultResourceGroupName string = ''
-param keyVaultServiceName string = ''
 param searchServiceSecretName string = 'searchServiceSecret'
 
 @description('Location for the OpenAI resource group')
@@ -167,7 +165,6 @@ var resourceToken = toLower(uniqueString(subscription().id, environmentName, loc
 var tags = { 'azd-env-name': environmentName }
 //var computerVisionName = !empty(computerVisionServiceName) ? computerVisionServiceName : '${abbrs.cognitiveServicesComputerVision}${resourceToken}'
 
-var useKeyVault = useSearchServiceKey
 var tenantIdForAuth = !empty(authTenantId) ? authTenantId : tenantId
 var authenticationIssuerUri = '${environment().authentication.loginEndpoint}${tenantIdForAuth}/v2.0'
 
@@ -226,9 +223,6 @@ resource storageResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' ex
   name: !empty(storageResourceGroupName) ? storageResourceGroupName : rg.name
 }
 
-resource keyVaultResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' existing = if (!empty(keyVaultResourceGroupName)) {
-  name: !empty(keyVaultResourceGroupName) ? keyVaultResourceGroupName : rg.name
-}
 
 // TODO: Scope to the specific resource (Event Hub, Storage, Key Vault) instead of the resource group.
 //       See https://github.com/Azure/bicep/discussions/5926
@@ -310,9 +304,6 @@ module storage './core/storage/storage-account.bicep' = {
     ]
 
     // Set the key vault name to set the connection string as a secret in the key vault.
-    keyVaultName: keyVault.outputs.name
-    keyVaultSecretName: storageSecretName
-
     useVirtualNetworkPrivateEndpoint: useVirtualNetworkPrivateEndpoint
   }
 }
@@ -375,7 +366,7 @@ module backend 'core/host/appservice.bicep' = {
     serverAppId: serverAppId
     clientSecretSettingName: !empty(clientAppSecret) ? 'AZURE_CLIENT_APP_SECRET' : ''
     authenticationIssuerUri: authenticationIssuerUri
-    use32BitWorkerProcess: appServiceSkuName == 'F1'
+    use32BitWorkerProcess: appServiceSkuName == 'S1'
     alwaysOn: appServiceSkuName != 'F1'
     appSettings: {
       AZURE_STORAGE_ACCOUNT: storage.outputs.name
@@ -384,7 +375,6 @@ module backend 'core/host/appservice.bicep' = {
       AZURE_SEARCH_SERVICE: searchService.outputs.name
       AZURE_SEARCH_SEMANTIC_RANKER: actualSearchServiceSemanticRankerLevel
       SEARCH_SECRET_NAME: useSearchServiceKey ? searchServiceSecretName : ''
-      AZURE_KEY_VAULT_NAME: useKeyVault ? keyVault.outputs.name : ''
       AZURE_SEARCH_QUERY_LANGUAGE: searchQueryLanguage
       AZURE_SEARCH_QUERY_SPELLER: searchQuerySpeller
       APPLICATIONINSIGHTS_CONNECTION_STRING: useApplicationInsights ? monitoring.outputs.applicationInsightsConnectionString : ''
@@ -547,35 +537,6 @@ module documentIntelligence 'core/ai/cognitiveservices.bicep' = {
 
 // Currently, we only need Key Vault for storing Search service key,
 // which is only used for free tier
-module keyVault 'core/security/keyvault.bicep' = if (useKeyVault) {
-  name: 'keyvault'
-  scope: keyVaultResourceGroup
-  params: {
-    name: !empty(keyVaultServiceName) ? keyVaultServiceName : '${abbrs.keyVaultVaults}${resourceToken}'
-    location: location
-    principalId: principalId
-  }
-}
-
-module webKVAccess 'core/security/keyvault-access.bicep' = if (useKeyVault) {
-  name: 'web-keyvault-access'
-  scope: keyVaultResourceGroup
-  params: {
-    keyVaultName: useKeyVault ? keyVault.outputs.name : ''
-    principalId: backend.outputs.identityPrincipalId
-  }
-}
-
-module secrets 'secrets.bicep' = if (useKeyVault) {
-  name: 'secrets'
-  scope: keyVaultResourceGroup
-  params: {
-    keyVaultName: useKeyVault ? keyVault.outputs.name : ''
-    storeSearchServiceSecret: useSearchServiceKey
-    searchServiceId: useSearchServiceKey ? searchService.outputs.id : ''
-    searchServiceSecretName: searchServiceSecretName
-  }
-}
 
 module searchService 'core/search/search-services.bicep' = {
   name: 'search-service'
@@ -657,12 +618,13 @@ module networking 'core/networking/private-networking.bicep' = if (useVirtualNet
   scope: rg
   params: {
     location: location
-    keyVaultName: keyVault.outputs.name
     storageAccountName: storage.outputs.name
     virtualNetworkIntegrationSubnetName: virtualNetworkIntegrationSubnetName
     virtualNetworkName: virtualNetworkName
     virtualNetworkPrivateEndpointSubnetName: virtualNetworkPrivateEndpointSubnetName
     openaiName: openAi.outputs.name
+    docIntelligenceName: documentIntelligence.outputs.name
+    cogSearchName: searchService.outputs.name
   }
 }
 
@@ -852,8 +814,6 @@ output AZURE_OPENAI_GPT4V_DEPLOYMENT string = isAzureOpenAiHost ? gpt4vDeploymen
 // Used only with non-Azure OpenAI deployments
 output OPENAI_API_KEY string = (openAiHost == 'openai') ? openAiApiKey : ''
 output OPENAI_ORGANIZATION string = (openAiHost == 'openai') ? openAiApiOrganization : ''
-
-output AZURE_KEY_VAULT_NAME string = useKeyVault ? keyVault.outputs.name : ''
 
 output AZURE_DOCUMENTINTELLIGENCE_SERVICE string = documentIntelligence.outputs.name
 output AZURE_DOCUMENTINTELLIGENCE_RESOURCE_GROUP string = documentIntelligenceResourceGroup.name

@@ -1,13 +1,14 @@
 param location string = resourceGroup().location
 param virtualNetworkName string
-param keyVaultName string
 param storageAccountName string
 param virtualNetworkIntegrationSubnetName string
 param virtualNetworkPrivateEndpointSubnetName string
 param openaiName string
+param docIntelligenceName string
+param cogSearchName string
 
-var storageServices = [ 'table', 'blob', 'queue', 'file' ]
-
+// var storageServices = [ 'table', 'blob', 'queue', 'file' ]
+var storageServices = [ 'blob' ]
 
 resource vnet 'Microsoft.Network/virtualNetworks@2022-11-01' existing = {
   name: virtualNetworkName
@@ -21,10 +22,6 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-11-01' existing = {
   }
 }
 
-resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' existing = {
-  name: keyVaultName
-}
-
 resource storage 'Microsoft.Storage/storageAccounts@2022-05-01' existing = {
   name: storageAccountName
 }
@@ -33,18 +30,26 @@ resource openAi 'Microsoft.CognitiveServices/accounts@2023-05-01' existing = {
   name: openaiName
 }
 
-module keyVaultPrivateEndpoint 'private-endpoint.bicep' = {
-  name: 'keyVaultPrivateEndpoint'
-  params: {
-    dnsZoneName: 'privatelink.vaultcore.azure.net'
-    privateEndpointName: 'pe-${keyVault.name}'
-    location: location
-    privateLinkServiceId: keyVault.id
-    subnetId: vnet::privateEndpointSubnet.id
-    virtualNetworkName: vnet.name
-    groupIds: [ 'vault' ]
-  }
+resource docIntelligence 'Microsoft.CognitiveServices/accounts@2023-05-01' existing = {
+  name: docIntelligenceName
 }
+
+resource cogSearch 'Microsoft.CognitiveServices/accounts@2023-05-01' existing = {
+  name: cogSearchName
+}
+
+// module keyVaultPrivateEndpoint 'private-endpoint.bicep' = {
+//   name: 'keyVaultPrivateEndpoint'
+//   params: {
+//     dnsZoneName: 'privatelink.vaultcore.azure.net'
+//     privateEndpointName: 'pe-${keyVault.name}'
+//     location: location
+//     privateLinkServiceId: keyVault.id
+//     subnetId: vnet::privateEndpointSubnet.id
+//     virtualNetworkName: vnet.name
+//     groupIds: [ 'vault' ]
+//   }
+// }
 
 module storagePrivateEndpoint 'private-endpoint.bicep' = [for (svc, i) in storageServices: {
   name: '${svc}-storagePrivateEndpoint'
@@ -60,6 +65,32 @@ module storagePrivateEndpoint 'private-endpoint.bicep' = [for (svc, i) in storag
     ]
   }
 }]
+
+module docIntelligencePrivateEnpoint 'private-endpoint.bicep' = {
+  name: 'docIntelligenceEnpoint'
+  params: {
+    dnsZoneName: 'privatelink.cognitiveservices.azure.com'
+    location: location
+    privateEndpointName: 'pe-${docIntelligence.name}'
+    privateLinkServiceId: docIntelligence.id
+    subnetId: vnet::privateEndpointSubnet.id
+    virtualNetworkName: vnet.name
+    groupIds: [ 'documentintelligence' ]
+  }
+}
+
+module cogSearchPrivateEndpoint 'private-endpoint.bicep' = {
+  name: 'cogSearchPrivateEndpoint'
+  params: {
+    dnsZoneName: 'privatelink.cognitiveservices.azure.com'
+    location: location
+    privateEndpointName: 'pe-${cogSearch.name}'
+    privateLinkServiceId: cogSearch.id
+    subnetId: vnet::privateEndpointSubnet.id
+    virtualNetworkName: vnet.name
+    groupIds: [ 'cognitiveservices' ]
+  }
+}
 
 /*
 module functionPrivateEndpoint 'private-endpoint.bicep' = {
@@ -79,12 +110,12 @@ module functionPrivateEndpoint 'private-endpoint.bicep' = {
 module openaiPrivateEndpoint 'private-endpoint.bicep' = {
   name: 'openaiPrivateEndpoint'
   params: {
-    dnsZoneName: 'privatelink.cognitiveservices.azure.com'
+    dnsZoneName: 'privatelink.openai.azure.com'
     location: location
     privateEndpointName: 'pe-${openAi.name}'
     privateLinkServiceId: openAi.id
     subnetId: vnet::privateEndpointSubnet.id
     virtualNetworkName: vnet.name
-    groupIds: [ 'cognitiveservices' ]
+    groupIds: [ 'openai' ]
   }
 }

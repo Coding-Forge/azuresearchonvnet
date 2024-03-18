@@ -17,6 +17,12 @@ param sku object = {
 
 //var baseName = 'placeholdername'
 
+
+// @allowed([ 'AzureDnsZone', 'Standard' ])
+// param dnsEndpointType string = 'Standard'
+// param minimumTlsVersion string = 'TLS1_2'
+
+
 param allowedIpRules array = []
 param networkAcls object = empty(allowedIpRules) ? {
   defaultAction: 'Allow'
@@ -24,6 +30,11 @@ param networkAcls object = empty(allowedIpRules) ? {
   ipRules: allowedIpRules
   defaultAction: 'Deny'
 }
+
+
+// can I use these here?
+// dnsEndpointType: dnsEndpointType
+// minimumTlsVersion: minimumTlsVersion
 
 
 //var openaiName = 'oai-${baseName}'
