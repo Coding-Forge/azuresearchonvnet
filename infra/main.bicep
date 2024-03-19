@@ -36,9 +36,9 @@ param principalId string = ''
 //   tags: union(tags, { 'azd-service-name': <service name in azure.yaml> })
 
 var useVirtualNetwork = useVirtualNetworkIntegration || useVirtualNetworkPrivateEndpoint
-var virtualNetworkName = 'bbbv${abbrs.networkVirtualNetworks}${resourceToken}-vn5'
-var virtualNetworkIntegrationSubnetName = 'bbbv${abbrs.networkVirtualNetworksSubnets}${resourceToken}-int5'
-var virtualNetworkPrivateEndpointSubnetName = 'bbbv${abbrs.networkVirtualNetworksSubnets}${resourceToken}-pe5'
+var virtualNetworkName = 'bbbbbbv${abbrs.networkVirtualNetworks}${resourceToken}-vn5'
+var virtualNetworkIntegrationSubnetName = 'bbbbbbv${abbrs.networkVirtualNetworksSubnets}${resourceToken}-int5'
+var virtualNetworkPrivateEndpointSubnetName = 'bbbbbbv${abbrs.networkVirtualNetworksSubnets}${resourceToken}-pe5'
 
 //var virtualNetworkName = ''
 //var virtualNetworkIntegrationSubnetName = ''
@@ -648,13 +648,13 @@ module networking 'core/networking/private-networking.bicep' = if (useVirtualNet
   scope: rg
   params: {
     location: location
-    storageAccountName: storage.outputs.name
     virtualNetworkIntegrationSubnetName: virtualNetworkIntegrationSubnetName
     virtualNetworkName: virtualNetworkName
     virtualNetworkPrivateEndpointSubnetName: virtualNetworkPrivateEndpointSubnetName
     openaiName: openAi.outputs.name
     docIntelligenceName: documentIntelligence.outputs.name
     cogSearchName: searchService.outputs.name
+    storageAccountName: storage.outputs.name
   }
 }
 

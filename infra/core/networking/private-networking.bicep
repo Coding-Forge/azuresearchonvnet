@@ -75,20 +75,20 @@ module docIntelligencePrivateEnpoint 'private-endpoint.bicep' = {
     privateLinkServiceId: docIntelligence.id
     subnetId: vnet::privateEndpointSubnet.id
     virtualNetworkName: vnet.name
-    groupIds: [ 'documentintelligence' ]
+    groupIds: [ 'account' ]
   }
 }
 
 module cogSearchPrivateEndpoint 'private-endpoint.bicep' = {
   name: 'cogSearchPrivateEndpoint'
   params: {
-    dnsZoneName: '/subscriptions/4465cf7c-8bde-41f8-aa38-938da8ac30a9/resourceGroups/aoaiwithvnet/providers/Microsoft.Network/privateDnsZones/privatelink.cognitiveservices.azure.com'
+    dnsZoneName: '/subscriptions/4465cf7c-8bde-41f8-aa38-938da8ac30a9/resourceGroups/aoaiwithvnet/providers/Microsoft.Network/privateDnsZones/privatelink.search.windows.net'
     location: location
     privateEndpointName: 'pe-${cogSearch.name}'
     privateLinkServiceId: cogSearch.id
     subnetId: vnet::privateEndpointSubnet.id
     virtualNetworkName: vnet.name
-    groupIds: [ 'cognitiveservices' ]
+    groupIds: [ 'searchService' ]
   }
 }
 
@@ -116,6 +116,6 @@ module openaiPrivateEndpoint 'private-endpoint.bicep' = {
     privateLinkServiceId: openAi.id
     subnetId: vnet::privateEndpointSubnet.id
     virtualNetworkName: vnet.name
-    groupIds: [ 'openai' ]
+    groupIds: [ 'account' ]
   }
 }
