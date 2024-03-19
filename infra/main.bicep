@@ -36,9 +36,9 @@ param principalId string = ''
 //   tags: union(tags, { 'azd-service-name': <service name in azure.yaml> })
 
 var useVirtualNetwork = useVirtualNetworkIntegration || useVirtualNetworkPrivateEndpoint
-var virtualNetworkName = 'bbv${abbrs.networkVirtualNetworks}${resourceToken}-vn5'
-var virtualNetworkIntegrationSubnetName = 'bbv${abbrs.networkVirtualNetworksSubnets}${resourceToken}-int5'
-var virtualNetworkPrivateEndpointSubnetName = 'bbv${abbrs.networkVirtualNetworksSubnets}${resourceToken}-pe5'
+var virtualNetworkName = 'bbbv${abbrs.networkVirtualNetworks}${resourceToken}-vn5'
+var virtualNetworkIntegrationSubnetName = 'bbbv${abbrs.networkVirtualNetworksSubnets}${resourceToken}-int5'
+var virtualNetworkPrivateEndpointSubnetName = 'bbbv${abbrs.networkVirtualNetworksSubnets}${resourceToken}-pe5'
 
 //var virtualNetworkName = ''
 //var virtualNetworkIntegrationSubnetName = ''
@@ -347,7 +347,7 @@ module appServicePlan 'core/host/appserviceplan.bicep' = {
   }
 }
 
-// The application frontend
+
 module backend 'core/host/appservice.bicep' = {
   name: 'web'
   scope: rg
@@ -357,59 +357,89 @@ module backend 'core/host/appservice.bicep' = {
     tags: union(tags, { 'azd-service-name': 'backend' })
     appServicePlanId: appServicePlan.outputs.id
     runtimeName: 'python'
-    runtimeVersion: '3.11'
+    runtimeVersion: '3.10'
     appCommandLine: 'python3 -m gunicorn main:app'
     scmDoBuildDuringDeployment: true
     managedIdentity: true
-    allowedOrigins: [ allowedOrigin ]
-    clientAppId: clientAppId
-    serverAppId: serverAppId
-    clientSecretSettingName: !empty(clientAppSecret) ? 'AZURE_CLIENT_APP_SECRET' : ''
-    authenticationIssuerUri: authenticationIssuerUri
-    use32BitWorkerProcess: appServiceSkuName == 'S1'
-    alwaysOn: appServiceSkuName != 'F1'
     appSettings: {
       AZURE_STORAGE_ACCOUNT: storage.outputs.name
       AZURE_STORAGE_CONTAINER: storageContainerName
+      AZURE_OPENAI_RESOURCE_GROUP: 'coding-forge'
+      AZURE_OPENAI_SERVICE: isAzureOpenAiHost ? openAi.outputs.name : ''
       AZURE_SEARCH_INDEX: searchIndexName
       AZURE_SEARCH_SERVICE: searchService.outputs.name
-      AZURE_SEARCH_SEMANTIC_RANKER: actualSearchServiceSemanticRankerLevel
-      SEARCH_SECRET_NAME: useSearchServiceKey ? searchServiceSecretName : ''
-      AZURE_SEARCH_QUERY_LANGUAGE: searchQueryLanguage
-      AZURE_SEARCH_QUERY_SPELLER: searchQuerySpeller
-      APPLICATIONINSIGHTS_CONNECTION_STRING: useApplicationInsights ? monitoring.outputs.applicationInsightsConnectionString : ''
-      // Shared by all OpenAI deployments
-      OPENAI_HOST: openAiHost
-      AZURE_OPENAI_CUSTOM_URL: azureOpenAiCustomUrl
-      AZURE_OPENAI_API_VERSION: azureOpenAiApiVersion
-      AZURE_OPENAI_EMB_MODEL_NAME: embeddingModelName
-      AZURE_OPENAI_CHATGPT_MODEL: chatGptModelName
-      AZURE_OPENAI_GPT4V_MODEL: gpt4vModelName
-      // Specific to Azure OpenAI
-      AZURE_OPENAI_SERVICE: isAzureOpenAiHost ? openAi.outputs.name : ''
       AZURE_OPENAI_CHATGPT_DEPLOYMENT: chatGptDeploymentName
+      AZURE_OPENAI_CHATGPT_MODEL: chatGptModelName
       AZURE_OPENAI_EMB_DEPLOYMENT: embeddingDeploymentName
-      AZURE_OPENAI_GPT4V_DEPLOYMENT: useGPT4V ? gpt4vDeploymentName : ''
-      // Used only with non-Azure OpenAI deployments
-      OPENAI_API_KEY: openAiApiKey
-      OPENAI_ORGANIZATION: openAiApiOrganization
-      // Optional login and document level access control system
-      AZURE_USE_AUTHENTICATION: useAuthentication
-      AZURE_ENFORCE_ACCESS_CONTROL: enforceAccessControl
-      AZURE_SERVER_APP_ID: serverAppId
-      AZURE_SERVER_APP_SECRET: serverAppSecret
-      AZURE_CLIENT_APP_ID: clientAppId
-      AZURE_CLIENT_APP_SECRET: clientAppSecret
-      AZURE_TENANT_ID: tenantId
-      AZURE_AUTH_TENANT_ID: tenantIdForAuth
-      AZURE_AUTHENTICATION_ISSUER_URI: authenticationIssuerUri
-      // CORS support, for frontends on other hosts
-      ALLOWED_ORIGIN: allowedOrigin
-      USE_VECTORS: useVectors
-      USE_GPT4V: useGPT4V
+      APPLICATIONINSIGHTS_CONNECTION_STRING: useApplicationInsights ? monitoring.outputs.applicationInsightsConnectionString : ''
     }
   }
 }
+
+
+// The application frontend
+// module backend 'core/host/appservice.bicep' = {
+//   name: 'web'
+//   scope: rg
+//   params: {
+//     name: !empty(backendServiceName) ? backendServiceName : '${abbrs.webSitesAppService}backend-${resourceToken}'
+//     location: location
+//     tags: union(tags, { 'azd-service-name': 'backend' })
+//     appServicePlanId: appServicePlan.outputs.id
+//     runtimeName: 'python'
+//     runtimeVersion: '3.11'
+//     appCommandLine: 'python3 -m gunicorn main:app'
+//     scmDoBuildDuringDeployment: true
+//     managedIdentity: true
+//     allowedOrigins: [ allowedOrigin ]
+//     clientAppId: clientAppId
+//     serverAppId: serverAppId
+//     clientSecretSettingName: !empty(clientAppSecret) ? 'AZURE_CLIENT_APP_SECRET' : ''
+//     authenticationIssuerUri: authenticationIssuerUri
+//     use32BitWorkerProcess: appServiceSkuName == 'S1'
+//     alwaysOn: appServiceSkuName != 'F1'
+//     appSettings: {
+//       AZURE_STORAGE_ACCOUNT: storage.outputs.name
+//       AZURE_STORAGE_CONTAINER: storageContainerName
+//       AZURE_SEARCH_INDEX: searchIndexName
+//       AZURE_SEARCH_SERVICE: searchService.outputs.name
+//       AZURE_SEARCH_SEMANTIC_RANKER: actualSearchServiceSemanticRankerLevel
+//       SEARCH_SECRET_NAME: useSearchServiceKey ? searchServiceSecretName : ''
+//       AZURE_SEARCH_QUERY_LANGUAGE: searchQueryLanguage
+//       AZURE_SEARCH_QUERY_SPELLER: searchQuerySpeller
+//       APPLICATIONINSIGHTS_CONNECTION_STRING: useApplicationInsights ? monitoring.outputs.applicationInsightsConnectionString : ''
+//       // Shared by all OpenAI deployments
+//       OPENAI_HOST: openAiHost
+//       AZURE_OPENAI_CUSTOM_URL: azureOpenAiCustomUrl
+//       AZURE_OPENAI_API_VERSION: azureOpenAiApiVersion
+//       AZURE_OPENAI_EMB_MODEL_NAME: embeddingModelName
+//       AZURE_OPENAI_CHATGPT_MODEL: chatGptModelName
+//       AZURE_OPENAI_GPT4V_MODEL: gpt4vModelName
+//       // Specific to Azure OpenAI
+//       AZURE_OPENAI_SERVICE: isAzureOpenAiHost ? openAi.outputs.name : ''
+//       AZURE_OPENAI_CHATGPT_DEPLOYMENT: chatGptDeploymentName
+//       AZURE_OPENAI_EMB_DEPLOYMENT: embeddingDeploymentName
+//       AZURE_OPENAI_GPT4V_DEPLOYMENT: useGPT4V ? gpt4vDeploymentName : ''
+//       // Used only with non-Azure OpenAI deployments
+//       OPENAI_API_KEY: openAiApiKey
+//       OPENAI_ORGANIZATION: openAiApiOrganization
+//       // Optional login and document level access control system
+//       AZURE_USE_AUTHENTICATION: useAuthentication
+//       AZURE_ENFORCE_ACCESS_CONTROL: enforceAccessControl
+//       AZURE_SERVER_APP_ID: serverAppId
+//       AZURE_SERVER_APP_SECRET: serverAppSecret
+//       AZURE_CLIENT_APP_ID: clientAppId
+//       AZURE_CLIENT_APP_SECRET: clientAppSecret
+//       AZURE_TENANT_ID: tenantId
+//       AZURE_AUTH_TENANT_ID: tenantIdForAuth
+//       AZURE_AUTHENTICATION_ISSUER_URI: authenticationIssuerUri
+//       // CORS support, for frontends on other hosts
+//       ALLOWED_ORIGIN: allowedOrigin
+//       USE_VECTORS: useVectors
+//       USE_GPT4V: useGPT4V
+//     }
+//   }
+// }
 
 /*
 var defaultOpenAiDeployments = [

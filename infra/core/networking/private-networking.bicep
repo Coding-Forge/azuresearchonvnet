@@ -67,9 +67,9 @@ module storagePrivateEndpoint 'private-endpoint.bicep' = [for (svc, i) in storag
 }]
 
 module docIntelligencePrivateEnpoint 'private-endpoint.bicep' = {
-  name: 'docIntelligenceEnpoint'
+  name: 'docIntelligenceEndpoint'
   params: {
-    dnsZoneName: 'privatelink.cognitiveservices.azure.com'
+    dnsZoneName: '/subscriptions/4465cf7c-8bde-41f8-aa38-938da8ac30a9/resourceGroups/aoaiwithvnet/providers/Microsoft.Network/privateDnsZones/privatelink.cognitiveservices.azure.com'
     location: location
     privateEndpointName: 'pe-${docIntelligence.name}'
     privateLinkServiceId: docIntelligence.id
@@ -82,7 +82,7 @@ module docIntelligencePrivateEnpoint 'private-endpoint.bicep' = {
 module cogSearchPrivateEndpoint 'private-endpoint.bicep' = {
   name: 'cogSearchPrivateEndpoint'
   params: {
-    dnsZoneName: 'privatelink.cognitiveservices.azure.com'
+    dnsZoneName: '/subscriptions/4465cf7c-8bde-41f8-aa38-938da8ac30a9/resourceGroups/aoaiwithvnet/providers/Microsoft.Network/privateDnsZones/privatelink.cognitiveservices.azure.com'
     location: location
     privateEndpointName: 'pe-${cogSearch.name}'
     privateLinkServiceId: cogSearch.id
@@ -110,7 +110,7 @@ module functionPrivateEndpoint 'private-endpoint.bicep' = {
 module openaiPrivateEndpoint 'private-endpoint.bicep' = {
   name: 'openaiPrivateEndpoint'
   params: {
-    dnsZoneName: 'privatelink.openai.azure.com'
+    dnsZoneName: '/subscriptions/4465cf7c-8bde-41f8-aa38-938da8ac30a9/resourceGroups/aoaiwithvnet/providers/Microsoft.Network/privateDnsZones/privatelink.openai.azure.com'
     location: location
     privateEndpointName: 'pe-${openAi.name}'
     privateLinkServiceId: openAi.id
