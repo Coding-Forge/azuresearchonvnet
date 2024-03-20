@@ -6,6 +6,7 @@ param virtualNetworkPrivateEndpointSubnetName string
 param openaiName string
 param docIntelligenceName string
 param cogSearchName string
+param appServiceName string
 
 // var storageServices = [ 'table', 'blob', 'queue', 'file' ]
 var storageServices = [ 'blob' ]
@@ -37,6 +38,12 @@ resource docIntelligence 'Microsoft.CognitiveServices/accounts@2023-05-01' exist
 resource cogSearch 'Microsoft.CognitiveServices/accounts@2023-05-01' existing = {
   name: cogSearchName
 }
+
+
+resource appService 'Microsoft.Web/sites@2023-01-01' existing = {
+  name: appServiceName
+}
+
 
 // module keyVaultPrivateEndpoint 'private-endpoint.bicep' = {
 //   name: 'keyVaultPrivateEndpoint'
@@ -102,18 +109,17 @@ module openaiPrivateEndpoint 'private-endpoint.bicep' = {
     groupIds: [ 'account' ]
   }
 }
-/*
-module functionPrivateEndpoint 'private-endpoint.bicep' = {
-  name: 'functionPrivateEndpoint'
+
+module appServicePrivateEndpoint 'private-endpoint.bicep' = {
+  name: 'appServicePrivateEndpoint'
   params: {
     dnsZoneName: 'privatelink.azurewebsites.net'
     location: location
-    privateEndpointName: 'pe-${function.name}'
-    privateLinkServiceId: function.id
+    privateEndpointName: 'pe-${appService.name}'
+    privateLinkServiceId: resourceId('Microsoft.Web/sites', appService.name)
     subnetId: vnet::privateEndpointSubnet.id
     virtualNetworkName: vnet.name
     groupIds: [ 'sites' ]
   }
 }
-*/
 
