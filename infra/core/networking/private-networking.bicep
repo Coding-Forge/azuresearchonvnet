@@ -48,7 +48,7 @@ resource cogSearch 'Microsoft.CognitiveServices/accounts@2023-05-01' existing = 
 //     subnetId: vnet::privateEndpointSubnet.id
 //     virtualNetworkName: vnet.name
 //     groupIds: [ 'vault' ]
-//   }
+//  cc }
 // }
 
 module storagePrivateEndpoint 'private-endpoint.bicep' = [for (svc, i) in storageServices: {
@@ -60,19 +60,17 @@ module storagePrivateEndpoint 'private-endpoint.bicep' = [for (svc, i) in storag
     privateLinkServiceId: storage.id
     subnetId: vnet::privateEndpointSubnet.id
     virtualNetworkName: vnet.name
-    groupIds: [
-      svc
-    ]
+    groupIds: [svc]
   }
 }]
 
 module docIntelligencePrivateEnpoint 'private-endpoint.bicep' = {
   name: 'docIntelligenceEndpoint'
   params: {
-    dnsZoneName: '/subscriptions/4465cf7c-8bde-41f8-aa38-938da8ac30a9/resourceGroups/aoaiwithvnet/providers/Microsoft.Network/privateDnsZones/privatelink.cognitiveservices.azure.com'
+    dnsZoneName: 'privatelink.cognitiveservices.azure.com'
     location: location
     privateEndpointName: 'pe-${docIntelligence.name}'
-    privateLinkServiceId: docIntelligence.id
+    privateLinkServiceId: resourceId('Microsoft.CognitiveServices/accounts', docIntelligence.name)
     subnetId: vnet::privateEndpointSubnet.id
     virtualNetworkName: vnet.name
     groupIds: [ 'account' ]
@@ -82,16 +80,28 @@ module docIntelligencePrivateEnpoint 'private-endpoint.bicep' = {
 module cogSearchPrivateEndpoint 'private-endpoint.bicep' = {
   name: 'cogSearchPrivateEndpoint'
   params: {
-    dnsZoneName: '/subscriptions/4465cf7c-8bde-41f8-aa38-938da8ac30a9/resourceGroups/aoaiwithvnet/providers/Microsoft.Network/privateDnsZones/privatelink.search.windows.net'
+    dnsZoneName: 'privatelink.search.windows.net'
     location: location
     privateEndpointName: 'pe-${cogSearch.name}'
-    privateLinkServiceId: cogSearch.id
+    privateLinkServiceId: resourceId('Microsoft.Search/searchServices', cogSearch.name)
     subnetId: vnet::privateEndpointSubnet.id
     virtualNetworkName: vnet.name
-    groupIds: [ 'searchService' ]
+    groupIds: [ 'searchService' ] // 'search'
   }
 }
 
+module openaiPrivateEndpoint 'private-endpoint.bicep' = {
+  name: 'openaiPrivateEndpoint'
+  params: {
+    dnsZoneName: 'privatelink.openai.azure.com'
+    location: location
+    privateEndpointName: 'pe-${openAi.name}'
+    privateLinkServiceId: resourceId('Microsoft.CognitiveServices/accounts',openAi.name) //openAi.id
+    subnetId: vnet::privateEndpointSubnet.id
+    virtualNetworkName: vnet.name
+    groupIds: [ 'account' ]
+  }
+}
 /*
 module functionPrivateEndpoint 'private-endpoint.bicep' = {
   name: 'functionPrivateEndpoint'
@@ -107,15 +117,3 @@ module functionPrivateEndpoint 'private-endpoint.bicep' = {
 }
 */
 
-module openaiPrivateEndpoint 'private-endpoint.bicep' = {
-  name: 'openaiPrivateEndpoint'
-  params: {
-    dnsZoneName: '/subscriptions/4465cf7c-8bde-41f8-aa38-938da8ac30a9/resourceGroups/aoaiwithvnet/providers/Microsoft.Network/privateDnsZones/privatelink.openai.azure.com'
-    location: location
-    privateEndpointName: 'pe-${openAi.name}'
-    privateLinkServiceId: openAi.id
-    subnetId: vnet::privateEndpointSubnet.id
-    virtualNetworkName: vnet.name
-    groupIds: [ 'account' ]
-  }
-}

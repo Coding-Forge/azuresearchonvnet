@@ -40,7 +40,7 @@ var searchIdentityProvider = (sku.name == 'free') ? null : {
   type: 'SystemAssigned'
 }
 
-resource search 'Microsoft.Search/searchServices@2021-04-01-preview' = {
+resource searchService 'Microsoft.Search/searchServices@2021-04-01-preview' = {
   name: name
   location: location
   tags: tags
@@ -61,8 +61,8 @@ resource search 'Microsoft.Search/searchServices@2021-04-01-preview' = {
   sku: sku
 }
 
-output id string = search.id
+output id string = searchService.id
 output endpoint string = 'https://${name}.search.windows.net/'
-output name string = search.name
-output principalId string = !empty(searchIdentityProvider) ? search.identity.principalId : ''
+output name string = searchService.name
+output principalId string = !empty(searchIdentityProvider) ? searchService.identity.principalId : ''
 

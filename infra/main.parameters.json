@@ -89,8 +89,17 @@
     "storageSkuName": {
       "value": "${AZURE_STORAGE_SKU=Standard_LRS}"
     },
-    "appServiceSkuName": {
-      "value": "${AZURE_APP_SERVICE_SKU=S1}"
+      "appServicePlanName": {
+      "value": "${AZURE_APP_SERVICE_PLAN=appserviceplan}"
+    },
+      "appServiceName": {
+      "value": "${AZURE_APP_SERVICE}"
+    },
+      "backendServiceName": {
+      "value": "${AZURE_BACKEND_SERVICE}"
+    },
+      "appServiceSkuName": {
+      "value": "${AZURE_APP_SERVICE_SKU=B1}"
     },
     "chatGptDeploymentName": {
       "value": "${AZURE_OPENAI_CHATGPT_DEPLOYMENT=chat}"
