@@ -403,3 +403,7 @@ FodyWeavers.xsd
 # Azurite
 .azurite/
 .azure
+
+!.venv
+.venv
+.mono
