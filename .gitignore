@@ -404,6 +404,8 @@ FodyWeavers.xsd
 .azurite/
 .azure
 
-!.venv
 .venv
 .mono
+
+# Ignore .venv directory
+.venv/
