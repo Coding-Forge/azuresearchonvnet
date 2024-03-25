@@ -36,13 +36,13 @@ param principalId string = ''
 //   tags: union(tags, { 'azd-service-name': <service name in azure.yaml> })
 
 var useVirtualNetwork = useVirtualNetworkIntegration || useVirtualNetworkPrivateEndpoint
-var virtualNetworkName = 'gggvc${abbrs.networkVirtualNetworks}${resourceToken}-vn5'
-var virtualNetworkIntegrationSubnetName = 'gggvc${abbrs.networkVirtualNetworksSubnets}${resourceToken}-int5'
-var virtualNetworkPrivateEndpointSubnetName = 'gggvc${abbrs.networkVirtualNetworksSubnets}${resourceToken}-pe5'
+// var virtualNetworkName = 'gggvc${abbrs.networkVirtualNetworks}${resourceToken}-vn5'
+// var virtualNetworkIntegrationSubnetName = 'gggvc${abbrs.networkVirtualNetworksSubnets}${resourceToken}-int5'
+// var virtualNetworkPrivateEndpointSubnetName = 'gggvc${abbrs.networkVirtualNetworksSubnets}${resourceToken}-pe5'
 
-//var virtualNetworkName = ''
-//var virtualNetworkIntegrationSubnetName = ''
-//var virtualNetworkPrivateEndpointSubnetName = ''
+var virtualNetworkName = ''
+var virtualNetworkIntegrationSubnetName = ''
+var virtualNetworkPrivateEndpointSubnetName = ''
 
 var functionAppName = '${abbrs.webSitesFunctions}${resourceToken}'
 
@@ -96,14 +96,12 @@ param searchServiceSecretName string = 'searchServiceSecret'
   }
 })
 param openAiResourceGroupLocation string
-
 param openAiSkuName string = 'S0'
-
 param openAiApiKey string = ''
 param openAiApiOrganization string = ''
-
 param documentIntelligenceServiceName string = ''
 param documentIntelligenceResourceGroupName string = ''
+
 // Limited regions for new version:
 // https://learn.microsoft.com/azure/ai-services/document-intelligence/concept-layout
 @description('Location for the Document Intelligence resource group')
@@ -114,7 +112,6 @@ param documentIntelligenceResourceGroupName string = ''
   }
 })
 param documentIntelligenceResourceGroupLocation string
-
 param documentIntelligenceSkuName string = 'S0'
 
 //param computerVisionServiceName string = ''
@@ -173,31 +170,9 @@ param runningOnGh string = ''
 param runningOnAdo string = ''
 
 
-resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' = {
+resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' existing = if(!empty(resourceGroupName)) {
   name: !empty(resourceGroupName) ? resourceGroupName : '${abbrs.resourcesResourceGroups}${environmentName}'
-  location: location
-  tags: tags
 }
-
-/*
-@description('This is the built-in role definition for the Key Vault Secret User role. See https://learn.microsoft.com/azure/role-based-access-control/built-in-roles#key-vault-secrets-user for more information.')
-resource keyVaultSecretUserRoleDefintion 'Microsoft.Authorization/roleDefinitions@2022-04-01' existing = {
-  scope: subscription()
-  name: '4633458b-17de-408a-b874-0445c86b69e6'
-}
-
-@description('This is the built-in role definition for the Azure Event Hubs Data Receiver role. See https://learn.microsoft.com/azure/role-based-access-control/built-in-roles#azure-event-hubs-data-receiver for more information.')
-resource eventHubDataReceiverUserRoleDefintion 'Microsoft.Authorization/roleDefinitions@2022-04-01' existing = {
-  scope: subscription()
-  name: 'a638d3c7-ab3a-418d-83e6-5f17a39d4fde'
-}
-
-@description('This is the built-in role definition for the Azure Storage Blob Data Owner role. See https://learn.microsoft.com/azure/role-based-access-control/built-in-roles#storage-blob-data-owner for more information.')
-resource storageBlobDataOwnerRoleDefinition 'Microsoft.Authorization/roleDefinitions@2022-04-01' existing = {
-  scope: subscription()
-  name: 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b'
-}
-*/
 
 resource openAiResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' existing = if (!empty(openAiResourceGroupName)) {
   name: !empty(openAiResourceGroupName) ? openAiResourceGroupName : rg.name
@@ -207,12 +182,6 @@ resource documentIntelligenceResourceGroup 'Microsoft.Resources/resourceGroups@2
   name: !empty(documentIntelligenceResourceGroupName) ? documentIntelligenceResourceGroupName : rg.name
 }
 
-/*
-resource computerVisionResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' existing = if (!empty(computerVisionResourceGroupName)) {
-  name: !empty(computerVisionResourceGroupName) ? computerVisionResourceGroupName : rg.name
-}
-*/
-
 resource searchServiceResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' existing = if (!empty(searchServiceResourceGroupName)) {
   name: !empty(searchServiceResourceGroupName) ? searchServiceResourceGroupName : rg.name
 }
@@ -221,56 +190,25 @@ resource storageResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' ex
   name: !empty(storageResourceGroupName) ? storageResourceGroupName : rg.name
 }
 
+resource vnet 'Microsoft.Network/virtualNetworks@2023-09-01' existing = if (useVirtualNetwork) {
+  name: virtualNetworkName
+  scope: rg
+}
 
-// TODO: Scope to the specific resource (Event Hub, Storage, Key Vault) instead of the resource group.
-//       See https://github.com/Azure/bicep/discussions/5926
+resource integrationSubnetNsg 'Microsoft.Network/networkSecurityGroups@2023-02-01' existing = if (useVirtualNetwork) {
+  name: virtualNetworkIntegrationSubnetName
+  scope: rg
+}
 
-/*
-module storageRoleAssignment 'core/security/role.bicep' = {
-  name: 'storageRoleAssignment'
+module privateEndpointSubnetNsg 'core/networking/network-security-group.bicep' = if (useVirtualNetwork) {
+  name: 'privateEndpointSubnetNsg'
   scope: rg
   params: {
-    principalId: functionApp.outputs.identityPrincipalId
-    roleDefinitionId: storageBlobDataOwnerRoleDefinition.name
-    principalType: 'ServicePrincipal'
+    name: '${abbrs.networkNetworkSecurityGroups}${resourceToken}-private-endpoint-subnet'
+    location: location
   }
 }
-*/
-/*
-module keyVaultRoleAssignment 'core/security/role.bicep' = {
-  name: 'keyVaultRoleAssignment'
-  scope: rg
-  params: {
-    principalId: functionApp.outputs.identityPrincipalId
-    roleDefinitionId: keyVaultSecretUserRoleDefintion.name
-    principalType: 'ServicePrincipal'
-  }
-}
-*/
 
-// module logAnalytics './core/monitor/loganalytics.bicep' = {
-//   name: 'logAnalytics'
-//   scope: rg
-//   params: {
-//     name: '${abbrs.operationalInsightsWorkspaces}${resourceToken}'
-//     location: location
-//     tags: tags
-//   }
-// }
-
-// module appInsights './core/monitor/applicationinsights.bicep' = {
-//   name: 'applicationInsights'
-//   scope: rg
-//   params: {
-//     name: '${abbrs.insightsComponents}${resourceToken}'
-//     tags: tags
-
-//     includeDashboard: false
-//     dashboardName: ''
-//     logAnalyticsWorkspaceId: logAnalytics.outputs.id
-//     location: location
-//   }
-// }
 
 module storage './core/storage/storage-account.bicep' = {
   name: 'storage'
@@ -306,29 +244,6 @@ module storage './core/storage/storage-account.bicep' = {
   }
 }
 
-// Monitor application with Azure Monitor
-// module monitoring 'core/monitor/monitoring.bicep' = if (useApplicationInsights) {
-//   name: 'monitoring'
-//   scope: rg
-//   params: {
-//     location: location
-//     tags: tags
-//     applicationInsightsName: !empty(applicationInsightsName) ? applicationInsightsName : '${abbrs.insightsComponents}${resourceToken}'
-//     logAnalyticsName: !empty(logAnalyticsName) ? logAnalyticsName : '${abbrs.operationalInsightsWorkspaces}${resourceToken}'
-//     applicationInsightsDashboardName: applicationInsightsDashboardName
-//   }
-// }
-
-// module applicationInsightsDashboard 'backend-dashboard.bicep' = if (useApplicationInsights) {
-//   name: 'application-insights-dashboard'
-//   scope: rg
-//   params: {
-//     name: !empty(applicationInsightsDashboardName) ? applicationInsightsDashboardName : '${abbrs.portalDashboards}${resourceToken}'
-//     location: location
-//     applicationInsightsName: useApplicationInsights ? monitoring.outputs.applicationInsightsName : ''
-//   }
-// }
-
 // Create an App Service Plan to group applications under the same payment plan and SKU
 module appServicePlan 'core/host/appserviceplan.bicep' = {
   name: 'appserviceplan'
@@ -344,7 +259,6 @@ module appServicePlan 'core/host/appserviceplan.bicep' = {
     kind: 'linux'
   }
 }
-
 
 module backend 'core/host/appservice.bicep' = {
   name: 'web'
@@ -427,11 +341,11 @@ module openAi 'core/ai/cognitiveservices.bicep' = if (isAzureOpenAiHost) {
     sku: {
       name: openAiSkuName
     }
-    vnetName: vnet.outputs.virtualNetworkName
+    vnetName: vnet.name //vnet.outputs.virtualNetworkName
     //deployments: openAiDeployments
     publicNetworkAccess: 'Disabled'
-    customSubDomainName: virtualNetworkIntegrationSubnetName
-    privateEndpointsSubnetname: virtualNetworkPrivateEndpointSubnetName
+    customSubDomainName: integrationSubnetNsg.name  // virtualNetworkIntegrationSubnetName
+    privateEndpointsSubnetname:  virtualNetworkPrivateEndpointSubnetName
   }
 }
 
@@ -448,7 +362,7 @@ module documentIntelligence 'core/ai/cognitiveservices.bicep' = {
       name: documentIntelligenceSkuName
     }
     publicNetworkAccess: 'Disabled'
-    vnetName: vnet.outputs.virtualNetworkName
+    vnetName: vnet.name //vnet.outputs.virtualNetworkName
     customSubDomainName: virtualNetworkIntegrationSubnetName
     privateEndpointsSubnetname: virtualNetworkPrivateEndpointSubnetName
   }
@@ -478,59 +392,43 @@ module searchService 'core/search/search-services.bicep' = {
   }
 }
 
-module integrationSubnetNsg 'core/networking/network-security-group.bicep' = if (useVirtualNetwork) {
-  name: 'integrationSubnetNsg'
-  scope: rg
-  params: {
-    name: '${abbrs.networkNetworkSecurityGroups}${resourceToken}-integration-subnet'
-    location: location
-  }
-}
 
-module privateEndpointSubnetNsg 'core/networking/network-security-group.bicep' = if (useVirtualNetwork) {
-  name: 'privateEndpointSubnetNsg'
-  scope: rg
-  params: {
-    name: '${abbrs.networkNetworkSecurityGroups}${resourceToken}-private-endpoint-subnet'
-    location: location
-  }
-}
 
-module vnet './core/networking/virtual-network.bicep' = if (useVirtualNetwork) {
-  name: 'vnet'
-  scope: rg
-  params: {
-    name: virtualNetworkName
-    location: location
-    tags: tags
+// module vnet './core/networking/virtual-network.bicep' = if (useVirtualNetwork) {
+//   name: 'vnet'
+//   scope: rg
+//   params: {
+//     name: virtualNetworkName
+//     location: location
+//     tags: tags
 
-    virtualNetworkAddressSpacePrefix: virtualNetworkAddressSpacePrefix
+//     virtualNetworkAddressSpacePrefix: virtualNetworkAddressSpacePrefix
 
-    // TODO: Find a better way to handle subnets. I'm not a fan of this array of object approach (losing Intellisense).
-    subnets: [
-      {
-        name: virtualNetworkIntegrationSubnetName
-        addressPrefix: virtualNetworkIntegrationSubnetAddressSpacePrefix
-        networkSecurityGroupId: useVirtualNetwork ? integrationSubnetNsg.outputs.id : null
+//     // TODO: Find a better way to handle subnets. I'm not a fan of this array of object approach (losing Intellisense).
+//     subnets: [
+//       {
+//         name: virtualNetworkIntegrationSubnetName
+//         addressPrefix: virtualNetworkIntegrationSubnetAddressSpacePrefix
+//         networkSecurityGroupId: useVirtualNetwork ? integrationSubnetNsg.outputs.id : null
 
-        delegations: [
-          {
-            name: 'delegation'
-            properties: {
-              serviceName: 'Microsoft.Web/serverFarms'
-            }
-          }
-        ]
-      }
-      {
-        name: virtualNetworkPrivateEndpointSubnetName
-        addressPrefix: virtualNetworkPrivateEndpointSubnetAddressSpacePrefix
-        networkSecurityGroupId: useVirtualNetwork ? privateEndpointSubnetNsg.outputs.id : null
-        privateEndpointNetworkPolicies: 'Disabled'
-      }
-    ]
-  }
-}
+//         delegations: [
+//           {
+//             name: 'delegation'
+//             properties: {
+//               serviceName: 'Microsoft.Web/serverFarms'
+//             }
+//           }
+//         ]
+//       }
+//       {
+//         name: virtualNetworkPrivateEndpointSubnetName
+//         addressPrefix: virtualNetworkPrivateEndpointSubnetAddressSpacePrefix
+//         networkSecurityGroupId: useVirtualNetwork ? privateEndpointSubnetNsg.outputs.id : null
+//         privateEndpointNetworkPolicies: 'Disabled'
+//       }
+//     ]
+//   }
+// }
 
 // Sets up private endpoints and private dns zones for the resources.
 module networking 'core/networking/private-networking.bicep' = if (useVirtualNetworkPrivateEndpoint) {
@@ -549,17 +447,17 @@ module networking 'core/networking/private-networking.bicep' = if (useVirtualNet
   }
 }
 
-module functionPlan 'core/host/functionplan.bicep' = {
-  name: 'functionPlan'
-  scope: rg
-  params: {
-    location: location
-    tags: tags
-    OperatingSystem: 'Linux'
-    name: '${abbrs.webServerFarms}${resourceToken}'
-    planSku: 'EP1'
-  }
-}
+// module functionPlan 'core/host/functionplan.bicep' = {
+//   name: 'functionPlan'
+//   scope: rg
+//   params: {
+//     location: location
+//     tags: tags
+//     OperatingSystem: 'Linux'
+//     name: '${abbrs.webServerFarms}${resourceToken}'
+//     planSku: 'EP1'
+//   }
+// }
 
 
 // USER ROLES

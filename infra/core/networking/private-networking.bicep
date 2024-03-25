@@ -39,7 +39,6 @@ resource cogSearch 'Microsoft.CognitiveServices/accounts@2023-05-01' existing = 
   name: cogSearchName
 }
 
-
 resource appService 'Microsoft.Web/sites@2023-01-01' existing = {
   name: appServiceName
 }
